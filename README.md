@@ -2,6 +2,7 @@
 Celebal Internship — ML Assignments
 
 Aaradhya Jain
+
 This repository contains weekly assignments completed as part of the Celebal Technologies Machine Learning Internship.
 
 📁 Week 1 — ML Foundations
