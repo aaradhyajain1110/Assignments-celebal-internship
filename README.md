@@ -11,6 +11,8 @@ A comprehensive notebook covering the mathematical and programmatic foundations 
  Topics Covered
 PartTopicKey ConceptsPart 1Python FundamentalsData types, control flow, exceptions, functions & lambdasPart 2NumPyArray creation, indexing, slicing, matrix operations, dot productsPart 3PandasDataFrames, Series, iloc/loc, filtering, groupby, missing dataPart 4Linear AlgebraEigenvalues/eigenvectors, SVD, PCAPart 5StatisticsDescriptive stats, distributions, hypothesis testing, PSIPart 6Probability TheoryBayes' Theorem, distributions, Central Limit Theorem
 Part Breakdown
+
+
 Part 1 — Python Fundamentals
 
 classify_number() — number classification using control flow
