@@ -5,7 +5,7 @@ Aaradhya Jain
 
 This repository contains weekly assignments completed as part of the Celebal Technologies Machine Learning Internship.
 
-Week 1 — ML Foundations
+## Week 1 — ML Foundations
 File: week1_Aaradhya_Jain_clean.ipynb
 A comprehensive notebook covering the mathematical and programmatic foundations of Machine Learning.
  Topics Covered
@@ -55,10 +55,10 @@ Central Limit Theorem demonstrated on exponential population (n=5000 samples, KS
 
 
 
-Week - 2 
-#  Tesla EV Deliveries — End-to-End ML Pipeline (2015–2025)
+## Week - 2 
+Tesla EV Deliveries — End-to-End ML Pipeline (2015–2025)
 
-## Overview
+ Overview
 An end-to-end machine learning pipeline built on Tesla's global delivery and production dataset spanning 10 years (2015–2025). The pipeline covers data preprocessing, exploratory data analysis, feature engineering, regression modeling, hyperparameter tuning, and time series forecasting.
 
 **Dataset:** [Tesla EA Deliveries and Production Data (2015–2025) — Kaggle](https://www.kaggle.com/datasets/nalisha/tesla-ea-deliveries-and-production-data20152025)  
