@@ -56,7 +56,7 @@ Central Limit Theorem demonstrated on exponential population (n=5000 samples, KS
 
 
 ## Week - 2 
-Tesla EV Deliveries — End-to-End ML Pipeline (2015–2025)
+## Tesla EV Deliveries — End-to-End ML Pipeline (2015–2025)
 
  Overview
 An end-to-end machine learning pipeline built on Tesla's global delivery and production dataset spanning 10 years (2015–2025). The pipeline covers data preprocessing, exploratory data analysis, feature engineering, regression modeling, hyperparameter tuning, and time series forecasting.
