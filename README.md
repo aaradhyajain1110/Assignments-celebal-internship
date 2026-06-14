@@ -137,3 +137,108 @@ An end-to-end machine learning pipeline built on Tesla's global delivery and pro
 - **ADF test** confirms stationarity — no differencing needed before forecasting
 - **North America** leads in delivery volume across all years
 - **Model 3 & Model Y** are the primary volume drivers
+
+
+
+
+## Week - 3
+# Unsupervised Learning on Country Data
+
+
+---
+
+## 📌 Objective
+To categorise 167 countries using socio-economic and health factors
+that determine their overall development level, and help HELP International
+NGO decide how to strategically allocate their $10 million aid fund.
+
+---
+
+## 📂 Dataset
+- **Source:** Kaggle — Unsupervised Learning on Country Data
+- **Link:** https://www.kaggle.com/datasets/rohan0301/unsupervised-learning-on-country-data
+- **Size:** 167 rows × 10 columns
+- **Features:** child_mort, exports, health, imports, income,
+  inflation, life_expec, total_fer, gdpp
+
+---
+
+## 🛠️ Libraries Used
+- pandas, numpy
+- matplotlib, seaborn
+- scikit-learn (KMeans, DBSCAN, PCA, StandardScaler, silhouette_score)
+
+---
+
+## 📋 Notebook Workflow
+
+| Step | Description |
+|------|-------------|
+| 1 | Install & import required libraries |
+| 2 | Load dataset via Kaggle Hub API |
+| 3 | Quick inspection (shape, dtypes, describe) |
+| 4 | Data cleaning (strip, deduplicate, numeric, impute) |
+| 5 | EDA — Correlation heatmap & boxplots |
+| 6 | Feature scaling using StandardScaler |
+| 7 | Elbow method to find optimal k |
+| 8 | KMeans training with best_k = 3 |
+| 9 | Silhouette Score evaluation |
+| 10 | DBSCAN comparative clustering |
+| 11 | PCA 2D visualization |
+| 12 | Cluster profiling |
+| 13 | Final insights & NGO recommendations |
+
+---
+
+## 📊 Key Results
+
+| Metric | Value |
+|--------|-------|
+| Optimal Clusters (k) | 3 |
+| Silhouette Score | 0.2833 |
+| PCA Variance Explained | 63.13% |
+| DBSCAN Outliers Found | 30 countries |
+
+---
+
+## 🌍 Cluster Summary
+
+| Cluster | Type | Countries | Avg GDPP | Avg Child Mortality |
+|---------|------|-----------|----------|-------------------|
+| Cluster 0 | Developed | 36 | $42,494 | 5.00 |
+| Cluster 1 | Underdeveloped | 47 | $1,922 | 92.96 |
+| Cluster 2 | Developing | 84 | $6,486 | 21.93 |
+
+---
+
+## 🔍 Key Observations
+
+1. **High Mortality Cluster** — Cluster 1 has child mortality of 92.96
+   per 1000 births. Countries like Afghanistan, Angola, and Nigeria
+   need immediate aid.
+
+2. **Top Economic Zone** — Cluster 0 includes Australia, Norway, USA
+   with average GDPP of $42,494 and life expectancy of 80.13 years.
+
+3. **Developing Nations** — Cluster 2 (84 countries) including India
+   and China are transitioning but need targeted investment.
+
+4. **DBSCAN Outliers** — 30 anomalous countries like Qatar, Singapore,
+   and Haiti need individual assessment strategies.
+
+5. **PCA Insights** — PC1 (45.95%) captures economic development axis.
+   PC2 (17.18%) captures trade pattern variation.
+
+---
+
+## 🎯 NGO Recommendation
+
+| Priority | Cluster | Action |
+|----------|---------|--------|
+| 🔴 Immediate Aid | Cluster 1 (47 countries) | Deploy funds to Afghanistan, Angola, Nigeria |
+| 🟡 Support | Cluster 2 (84 countries) | Targeted healthcare & education investment |
+| 🟢 Donor Nations | Cluster 0 (36 countries) | Partner for co-funding initiatives |
+| ⚪ Individual Review | 30 DBSCAN Outliers | Case-by-case evaluation |
+
+---
+
