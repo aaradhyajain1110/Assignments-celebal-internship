@@ -241,4 +241,33 @@ NGO decide how to strategically allocate their $10 million aid fund.
 | ⚪ Individual Review | 30 DBSCAN Outliers | Case-by-case evaluation |
 
 ---
+# Week 4 — CIFAR-10: ANN vs CNN
 
+Image classification on CIFAR-10 comparing an Artificial Neural Network (ANN) against a Convolutional Neural Network (CNN), with student tasks exploring architecture depth, filter scaling, training duration, EarlyStopping, and data augmentation.
+
+## Contents
+- Baseline ANN (Dense + Dropout) and baseline CNN (Conv2D + BatchNorm + MaxPooling)
+- Accuracy & loss curve comparisons
+- 5 student tasks: deeper ANN, scaled CNN filters (32→64→128), 20-epoch training, EarlyStopping, data augmentation (RandomFlip/RandomRotation/RandomZoom)
+- Final train/val/test accuracy comparison across all model variants
+
+## Results Summary
+
+| Model | Test Accuracy |
+|---|---|
+| Baseline ANN | ~42% |
+| Deeper ANN | ~39-41% |
+| Baseline CNN | ~67-68% |
+| Scaled CNN (32→64→128) | ~70-73% |
+| CNN, 20 epochs | ~72-73% |
+| CNN + EarlyStopping | ~72-73% |
+| Augmented CNN | ~70% (best generalization, smallest train/val gap) |
+
+## Key Takeaway
+CNNs significantly outperform ANNs on image data by preserving spatial structure. Among training strategies, data augmentation produced the most generalizable model — not the highest raw accuracy, but the smallest gap between train and validation accuracy.
+
+## Tech Stack
+TensorFlow / Keras, Matplotlib, NumPy, Pandas
+
+## Dataset
+[CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar-10.html) — 60,000 32×32 color images across 10 classes (50,000 train / 10,000 test)
