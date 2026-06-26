@@ -271,3 +271,50 @@ TensorFlow / Keras, Matplotlib, NumPy, Pandas
 
 ## Dataset
 [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar-10.html) — 60,000 32×32 color images across 10 classes (50,000 train / 10,000 test)
+
+# Week 5 — Text Generation using RNN, LSTM & GRU
+
+A deep learning project comparing Vanilla RNN, LSTM, and GRU architectures for next-word prediction and text generation using TensorFlow/Keras.
+
+---
+
+## 📌 Objective
+Build and compare three sequence models on a text corpus to understand how gated architectures handle language patterns better than Vanilla RNN.
+
+---
+
+## 🧠 Models Compared
+| Model | Gates | Strength |
+|---|---|---|
+| Vanilla RNN | None | Simple, fast, short patterns only |
+| LSTM | Input, Forget, Output | Best for long-range dependencies |
+| GRU | Reset, Update | Faster than LSTM, similar performance |
+
+---
+
+## 📂 What's Inside
+- Data preprocessing — tokenization and n-gram sequence building
+- Three model architectures built with identical optimizer config
+- Training loss comparison plot across 100 epochs
+- Text generation using `np.argmax` over probability arrays
+- 5 beginner customization tasks
+
+---
+
+## ✅ Student Tasks Completed
+1. **Custom Corpus** — replaced boilerplate with 10-sentence AI/ML paragraph
+2. **Embedding Dim** — increased from 32 → 64
+3. **Epochs** — expanded training from 100 → 200
+4. **Hidden Units** — widened layers from 64 → 128
+5. **Text Generation** — extended output from 5 → 10 words
+
+---
+
+## 📊 Key Findings
+- LSTM and GRU converge faster and lower than Vanilla RNN
+- GRU matches LSTM performance with fewer parameters
+- Larger corpus and more epochs improve generation quality
+- Vanilla RNN loses coherence on longer generated sequences
+
+---
+
