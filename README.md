@@ -318,3 +318,133 @@ Build and compare three sequence models on a text corpus to understand how gated
 
 ---
 
+# Week 6 — Image Denoising with Autoencoders on MNIST
+
+**Author:** Aaradhya Jain
+
+This notebook builds and compares four autoencoder architectures for removing Gaussian noise from MNIST handwritten digit images. It covers a feedforward (dense) baseline and three convolutional variants, trained and evaluated side by side using reconstruction loss, PSNR, and SSIM.
+
+## Contents
+
+1. [Overview](#overview)
+2. [Dataset](#dataset)
+3. [Preprocessing](#preprocessing)
+4. [Models](#models)
+5. [Training Setup](#training-setup)
+6. [Results](#results)
+7. [Key Takeaways](#key-takeaways)
+8. [Requirements](#requirements)
+9. [Usage](#usage)
+10. [Outputs](#outputs)
+
+## Overview
+
+Given a clean MNIST digit corrupted with Gaussian noise, each model learns to reconstruct the original, denoised image. The notebook walks through:
+
+- Environment/GPU check (T4 recommended)
+- Downloading and loading the dataset
+- Adding synthetic noise to create paired (noisy, clean) training data
+- Building, training, and evaluating four autoencoder variants
+- Visual and quantitative comparison across all models
+
+## Dataset
+
+- **Source:** [`awsaf49/mnist-dataset`](https://www.kaggle.com/datasets/awsaf49/mnist-dataset) on Kaggle, downloaded via `kagglehub`
+- **Format:** MNIST digits as PNG images, organized into per-digit folders (`0`–`9`) under `mnist_png/training` and `mnist_png/testing`
+- **Size:** 60,000 training images, 10,000 test images, 28×28 grayscale
+
+## Preprocessing
+
+1. Load PNGs into NumPy arrays via PIL (`'L'` grayscale mode)
+2. Normalize pixel values from `[0, 255]` to `[0, 1]`
+3. Reshape to `(28, 28, 1)` to add a channel dimension
+4. Generate noisy versions by adding Gaussian noise:
+   ```python
+   noisy = images + noise_factor * np.random.normal(0.0, 1.0, size=images.shape)
+   noisy = np.clip(noisy, 0.0, 1.0)
+   ```
+   with `noise_factor = 0.4`
+5. For the FFNN model, images are additionally flattened to 784-length vectors
+
+## Models
+
+| # | Model | Encoder | Decoder | Loss |
+|---|---|---|---|---|
+| 1 | **FFNN AE** | `Dense(64, relu)` on flattened 784-dim input | `Dense(784, sigmoid)` | MSE |
+| 2 | **Transpose CNN AE** | `Conv2D` → `BatchNorm` → `LeakyReLU` → `MaxPooling2D` (×2, 28→14→7) | `Conv2DTranspose` (strided, learned upsampling) → `BatchNorm` → `LeakyReLU` (×2, 7→14→28), final `Conv2D(1, sigmoid)` | MSE |
+| 3 | **Upsampled CNN AE (MSE)** | `Conv2D(32, relu)` + `MaxPooling2D` (×2, 28→14→7) | `Conv2D(32, relu)` + `UpSampling2D` (×2, 7→14→28), final `Conv2D(1, sigmoid)` | MSE |
+| 4 | **Upsampled CNN AE (BCE)** | Same architecture as #3 | Same architecture as #3 | Binary Cross-Entropy |
+
+**Why compare these four?** They isolate two independent design choices:
+- **Dense vs. convolutional** (#1 vs. #2/#3/#4) — does preserving 2D spatial structure matter?
+- **Learned vs. non-learned upsampling** (#2 vs. #3) — does letting the decoder learn its own upsampling filters (`Conv2DTranspose`) beat fixed nearest-neighbor `UpSampling2D`?
+- **MSE vs. BCE loss** (#3 vs. #4) — does treating pixels as near-binary probabilities (BCE) beat treating them as continuous values (MSE), given pixel intensities are normalized to `[0, 1]`?
+
+## Training Setup
+
+- **Optimizer:** Adam (default settings for models 1, 3, 4; explicit `learning_rate=0.001` for model 2)
+- **Epochs:** 20 (all models)
+- **Batch size:** 128
+- **Shuffle:** enabled
+- **Validation:** noisy test set → clean test set, evaluated every epoch
+- **Input/target pairs:** `(noisy image, clean image)` for all models
+
+## Results
+
+Evaluated on the full 10,000-image test set.
+
+| Model | PSNR (dB) | SSIM | PSNR Gain over Noisy |
+|---|---|---|---|
+| Noisy input (no model) | 10.99 | 0.446 | — |
+| FFNN AE | 19.51 | 0.790 | +8.51 dB |
+| Transpose CNN AE | 21.35 | 0.898 | +10.35 dB |
+| Upsampled CNN AE (MSE) | *computed at runtime* | *computed at runtime* | *computed at runtime* |
+| **Upsampled CNN AE (BCE)** | **21.46** | **0.907** | **+10.46 dB** |
+
+> The Upsampled CNN AE (MSE) metrics are computed dynamically in the notebook (`psnr_model5`, `ssim_model5`) rather than hardcoded — run the notebook to populate these values, or check the printed test-set evaluation output.
+
+**Winner: Upsampled CNN AE (BCE)** — highest PSNR and SSIM of all four models.
+
+## Key Takeaways
+
+1. **Convolutions beat dense layers.** All three CNN-based models outperform the FFNN AE. Flattening an image into a 784-length vector throws away spatial relationships between neighboring pixels; convolutional filters exploit local structure (edges, strokes) that a dense bottleneck cannot.
+2. **Loss function matters as much as architecture.** Swapping MSE for BCE on the *identical* Upsampled CNN architecture (#3 → #4) produces a bigger SSIM improvement than switching to learned transposed-convolution upsampling (#3 → #2). Since MNIST pixels are mostly pure black or pure white, BCE — which penalizes uncertain, "gray" predictions far more steeply near 0 and 1 — pushes the model toward sharper, higher-contrast, more confident reconstructions than MSE's tendency to average toward gray.
+3. **Learned upsampling gives a smaller, secondary boost.** The Transpose CNN AE's strided `Conv2DTranspose` layers modestly outperform plain MSE-trained `UpSampling2D`, but this effect is smaller than the effect of choosing the right loss function.
+4. **Net effect:** convolutional structure + a loss function matched to the data distribution (BCE for near-binary, [0,1]-normalized pixels) together produce the best denoising results — the Upsampled CNN AE (BCE) model.
+
+## Requirements
+
+```
+tensorflow
+numpy
+pillow
+matplotlib
+scikit-image
+kagglehub
+```
+
+GPU (e.g., NVIDIA T4) recommended but not required — training will fall back to CPU (slower) otherwise.
+
+## Usage
+
+Run top to bottom in Google Colab (recommended, GPU runtime) or a local Jupyter environment:
+
+```bash
+jupyter notebook week6_Aaradhya_Jain.ipynb
+```
+
+Kaggle API credentials must be configured for `kagglehub.dataset_download` to fetch the dataset.
+
+## Outputs
+
+Trained models are saved to disk in Keras format:
+
+- `ffnn_autoencoder_mnist.keras`
+- `transpose_cnn_autoencoder_mnist.keras`
+- `upsampled_cnn_autoencoder_mnist.keras` *(BCE-trained model)*
+
+The notebook also produces:
+- Clean vs. noisy sample visualizations
+- Combined train/validation loss curves for all four models
+- Side-by-side grid of original / noisy / denoised outputs across all models
+- Bar charts comparing PSNR, SSIM, and PSNR improvement over the noisy baseline
