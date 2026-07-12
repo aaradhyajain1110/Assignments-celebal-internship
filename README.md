@@ -448,3 +448,302 @@ The notebook also produces:
 - Combined train/validation loss curves for all four models
 - Side-by-side grid of original / noisy / denoised outputs across all models
 - Bar charts comparing PSNR, SSIM, and PSNR improvement over the noisy baseline
+
+# 📄 Week 7 — Document Question Answering System (RAG)
+
+**Author:** Aaradhya Jain
+**Notebook:** `week7_Aaradhya_Jain_.ipynb`
+
+A Retrieval-Augmented Generation (RAG) system that answers questions grounded in
+custom documents — PDFs, text files, or Hugging Face dataset archives — instead
+of relying on a language model's internal, possibly outdated or hallucinated
+knowledge. Includes an interactive Gradio UI for uploading documents and asking
+questions live.
+
+🔗 **Live UI link:** generated fresh each time the notebook's last cell
+(`demo.launch(share=True, ...)`) runs — copy the `https://xxxxx.gradio.live`
+URL Gradio prints in the cell output and paste it here after running:
+`<PASTE_GRADIO_LINK_HERE>`
+*(Gradio share links are temporary and expire after the Colab session ends —
+re-run the last cell to generate a new one.)*
+
+**Dataset used for evaluation:** [`vectara/open_ragbench`](https://huggingface.co/datasets/vectara/open_ragbench)
+(1,000 arXiv papers, BEIR format, with 3,045 human-written ground-truth questions)
+
+---
+
+## Table of Contents
+- [Live UI Link](#-live-ui-link)
+- [Overview](#overview)
+- [Why RAG](#why-rag)
+- [System Architecture](#system-architecture)
+- [Project Structure](#project-structure)
+- [Setup & Installation](#setup--installation)
+- [How to Run](#how-to-run)
+- [Using the Interactive UI](#using-the-interactive-ui)
+- [Evaluation Results](#evaluation-results)
+- [Key Design Decisions](#key-design-decisions)
+- [Known Limitations](#known-limitations)
+- [Future Improvements](#future-improvements)
+- [Key Learnings](#key-learnings)
+
+---
+
+## Overview
+
+This project implements a full Retrieval-Augmented Generation pipeline end to
+end: document ingestion → chunking → embedding → vector storage → retrieval →
+grounded answer generation, plus two retrieval upgrades (hybrid search and
+cross-encoder re-ranking) and a hallucination guardrail, all validated against
+thousands of real questions with known correct answers.
+
+**Objectives:**
+- Understand and implement Retrieval-Augmented Generation from scratch
+- Build a pipeline that combines retrieval and generation into one system
+- Enable question answering over custom, private, or domain-specific documents
+- Compare retrieval strategies (dense vs. hybrid vs. reranked) using real metrics, not guesses
+- Provide an interactive interface non-technical users can use directly
+
+---
+
+## Why RAG
+
+A plain language model can only answer from what it learned during training —
+it has no access to your documents, and it will often *hallucinate* a confident
+but wrong answer rather than admit it doesn't know. RAG fixes this by:
+
+1. **Retrieval** — finding the most relevant passages from your own documents
+   using semantic (and keyword) search
+2. **Augmentation** — inserting those passages into the model's prompt as context
+3. **Generation** — having the model answer using *only* that context, and
+   explicitly say so when the answer isn't present
+
+This makes answers traceable back to a real source document, and lets the
+system work over private or specialized data the base model was never trained on.
+
+---
+
+## System Architecture
+
+```
+┌─────────────┐    ┌───────────┐    ┌────────────┐    ┌──────────────┐
+│  Documents   │───▶│  Chunking  │───▶│ Embedding  │───▶│ FAISS Vector │
+│ (PDF/TXT/HF) │    │  (800/150) │    │(MiniLM-L6) │    │    Index     │
+└─────────────┘    └───────────┘    └────────────┘    └──────┬───────┘
+                                                                │
+┌─────────────┐    ┌───────────┐    ┌────────────┐            │
+│  Question   │───▶│   Query    │───▶│  Hybrid +  │◀───────────┘
+│   (User)    │    │ Embedding  │    │  Rerank    │
+└─────────────┘    └───────────┘    └──────┬─────┘
+                                             │
+                                             ▼
+                                  ┌────────────────────┐
+                                  │  Relevance Guardrail │
+                                  │  (blocks off-topic)  │
+                                  └──────────┬───────────┘
+                                             │
+                                             ▼
+                                  ┌────────────────────┐
+                                  │  Qwen2.5-1.5B-Instruct│
+                                  │  (grounded answer)   │
+                                  └────────────────────┘
+```
+
+### Stage-by-stage breakdown
+
+| # | Stage | What it does | Tool / Model |
+|---|---|---|---|
+| 1 | Document Ingestion | Loads raw text from PDF, `.txt`, or HF JSON into a unified `(text, title)` format | Custom `ingest_document()` |
+| 2 | Chunking | Splits text into overlapping 800-char chunks so retrieval is focused, not document-wide | LangChain `RecursiveCharacterTextSplitter` |
+| 3 | Embedding | Converts each chunk into a 384-dim vector capturing its meaning | `sentence-transformers/all-MiniLM-L6-v2` |
+| 4 | Vector Storage | Indexes all chunk vectors for fast similarity search | FAISS `IndexFlatL2` |
+| 5 | Query Embedding | Embeds the user's question with the same model as the chunks | `embed_query()` |
+| 6 | Retrieval | Returns the top-k most similar chunks to the question | FAISS similarity search |
+| 7 | Hybrid Search | Fuses vector similarity with BM25 keyword matching to catch exact-term matches | `rank_bm25` (BM25Okapi) |
+| 8 | Re-ranking | Re-scores the hybrid candidate pool with a cross-encoder for higher precision | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
+| 9 | Guardrail | Blocks generation if the best chunk's relevance score is below a calibrated threshold | Rerank-score gate |
+| 10 | Generation | Produces the final answer using only the retrieved context | `Qwen/Qwen2.5-1.5B-Instruct` |
+| 11 | UI | Upload documents and ask questions through a web interface | Gradio |
+
+---
+
+## Project Structure
+
+```
+.
+├── week7_Aaradhya_Jain_.ipynb   # Main notebook — full pipeline, evaluation, and UI
+├── rag_metrics_report.md        # Auto-generated metrics report (produced by the notebook)
+└── README.md                    # This file
+```
+
+The notebook is organized into numbered, self-contained steps (STEP 1 through
+STEP 16, plus a UI step), each preceded by a markdown cell explaining what that
+step does and why. Running the notebook top to bottom reproduces the entire
+pipeline and regenerates the metrics report.
+
+---
+
+## Setup & Installation
+
+The notebook installs its own dependencies inline via `!pip install`, so no
+separate `requirements.txt` setup is required. Libraries used:
+
+| Library | Purpose |
+|---|---|
+| `pypdf` | PDF text extraction |
+| `huggingface_hub` | Downloading the evaluation dataset |
+| `langchain-text-splitters` | Text chunking |
+| `sentence-transformers` | Embedding model + cross-encoder reranker |
+| `faiss-cpu` | Vector similarity search |
+| `rank_bm25` | Keyword-based (BM25) retrieval |
+| `transformers`, `accelerate`, `torch` | Loading and running the language model |
+| `gradio` | Interactive web UI |
+
+**Recommended environment:** Google Colab with a GPU runtime (T4 or better) —
+the language model and cross-encoder run substantially faster on GPU, and
+embedding ~150K chunks on CPU alone would take considerably longer.
+
+---
+
+## How to Run
+
+1. Open `week7_Aaradhya_Jain_.ipynb` in Google Colab (or Jupyter with a GPU).
+2. Set the runtime to GPU: **Runtime → Change runtime type → T4 GPU**.
+3. Run all cells in order, top to bottom (**Runtime → Run all**). Each `!pip
+   install` cell only needs to run once per session.
+4. The notebook will:
+   - Download and ingest ~1,000 papers from `vectara/open_ragbench`
+   - Chunk and embed the full corpus (~150K chunks)
+   - Build the FAISS and BM25 indexes
+   - Load the language model
+   - Run through validation questions and print live examples
+   - Run the full retrieval-strategy comparison and save `rag_metrics_report.md`
+   - Launch the Gradio UI at the end
+
+> ⏱️ **Note:** embedding the full corpus and running the 300-question strategy
+> comparison are the most time-consuming steps (several minutes each on GPU).
+> To test the pipeline faster, you can load a smaller subset of documents in
+> Step 2b before running the rest.
+
+---
+
+## Using the Interactive UI
+
+The final notebook cell launches a Gradio app with two tabs.
+
+🔗 **Access it here:** ` https://9cb3ed8455a1b79f49.gradio.live` — active only while the
+Colab notebook session is running.
+
+**📤 Upload Documents**
+Upload your own PDF or `.txt` files. They are ingested, chunked, embedded, and
+added directly into the existing FAISS index and BM25 index — so they become
+searchable immediately, alongside the ~1,000 papers already loaded, without
+restarting the notebook.
+
+**💬 Ask Questions**
+Type a question and get a grounded answer, with:
+- A toggle to enable/disable the hallucination guardrail
+- A toggle to show which source documents the answer came from
+- A few example questions to try immediately
+
+`demo.launch(share=True, ...)` generates a public link so the app can be used
+from a browser or phone without exposing the Colab notebook itself.
+
+---
+
+## Evaluation Results
+
+Evaluated on 3,045 real, human-written questions from `open_ragbench` (each
+with a ground-truth source paper), using a 300-question sample for the
+strategy comparison:
+
+| Strategy | Top-1 Accuracy | Top-5 Accuracy | Time (300 questions) |
+|---|---|---|---|
+| Dense only (FAISS) | 90.33% | 96.33% | 11.2s |
+| Hybrid (BM25 + Vector) | 94.00% | 98.00% | 262.4s |
+| Hybrid + Rerank | 92.33% | **98.67%** | 280.8s |
+
+**Key finding:** hybrid search improved Top-1 accuracy by ~3.7 points over
+dense-only retrieval, at roughly 23x the latency. Re-ranking pushed Top-5
+accuracy to its best overall value but slightly reduced Top-1 versus hybrid
+alone — the general-purpose cross-encoder occasionally favors a topically
+similar chunk from the wrong paper over the exact ground-truth source, since
+it wasn't fine-tuned on this arXiv domain.
+
+**Concrete example:** for the question *"Why is it important for models to
+generalize effectively across different editing styles?"*, dense-only search
+failed completely (0/5 correct chunks — it only matched the abstract concept
+of "generalization"). Hybrid search correctly found the target paper by
+matching literal terms like "editing styles" that the embedding model missed.
+
+**Guardrail calibration:** an in-domain question scored 7.32 on the reranker's
+relevance scale (answer generated normally); a clearly unrelated question
+("What's the capital of France?") scored -6.38 and was correctly blocked,
+returning *"I cannot find this information in the provided documents"* instead
+of a hallucinated answer.
+
+The full report, including dataset statistics and embedding/vector-store
+details, is regenerated on each run and saved to `rag_metrics_report.md`.
+
+---
+
+## Key Design Decisions
+
+- **Chunk size (800 / 150 overlap):** balances retrieval precision (small
+  enough that chunks stay topically focused) against context loss at chunk
+  boundaries (overlap prevents key sentences from being split apart).
+- **`IndexFlatL2` (exact search) over approximate indexes:** at ~150K vectors,
+  exact search is still fast enough and guarantees the true nearest neighbors.
+  An approximate index (IVF/HNSW) would be the right tradeoff at millions of
+  vectors.
+- **Hybrid retrieval before re-ranking:** BM25 and vector search are cheap and
+  can run over the full corpus; the more expensive cross-encoder only needs to
+  re-score a small candidate pool (20 chunks), not the entire index.
+- **Guardrail based on rerank score, not a fixed keyword filter:** calibrating
+  the relevance threshold against real in-domain vs. unrelated question scores
+  makes the cutoff evidence-based rather than an arbitrary guess.
+
+---
+
+## Known Limitations
+
+- **BM25 rebuild cost:** the keyword index isn't incremental — adding new
+  documents through the UI requires re-tokenizing the entire corpus, which
+  gets slower as the corpus grows.
+- **Off-the-shelf re-ranker:** `ms-marco-MiniLM-L-6-v2` is trained on general
+  web passages, not scientific papers, so it isn't a strict precision upgrade
+  over hybrid search alone on this dataset.
+- **Single global guardrail threshold:** reliably blocks clearly irrelevant
+  questions, but doesn't catch subtler cases where a moderately-high score
+  still points to the wrong document.
+- **Hybrid search latency:** ~23x slower than dense-only in the current
+  unoptimized implementation, since BM25 scoring is recomputed per query.
+
+---
+
+## Future Improvements
+
+- Compare multiple chunk size/overlap configurations against retrieval accuracy
+- Try alternative or larger embedding models (e.g. `bge-small-en-v1.5`)
+- Fine-tune or swap the cross-encoder for a domain-specific reranker
+- Cache or precompute BM25 scoring to reduce hybrid search latency
+- Move from `IndexFlatL2` to an approximate FAISS index for larger corpora
+- Add per-chunk or per-document deletion/reset controls to the UI
+
+---
+
+## Key Learnings
+
+- Dense retrieval alone is fast and strong (90%+ Top-1) but can fail on
+  questions that hinge on specific terminology general-purpose embeddings
+  don't capture well.
+- Hybrid search meaningfully closes that gap, especially for keyword-heavy
+  questions, at a real, measurable latency cost.
+- Re-ranking is not automatically an upgrade — its value depends on whether
+  the reranker matches the target domain.
+- A single global relevance threshold is a reasonable, evidence-calibrated
+  guardrail against hallucination, but has known blind spots worth documenting
+  rather than hiding.
+- Validating against real, human-labeled questions (rather than a handful of
+  hand-picked examples) is what turns "this seems to work" into an actual,
+  defensible measurement.
