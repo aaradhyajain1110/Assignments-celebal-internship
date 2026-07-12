@@ -461,7 +461,7 @@ knowledge. Includes an interactive Gradio UI for uploading documents and asking
 questions live.
 
 🔗 **Live UI link:** generated fresh each time the notebook's last cell
-(`demo.launch(share=True, ...)`) runs — copy the `https://xxxxx.gradio.live`
+(`demo.launch(share=True, ...)`) runs — copy the ` https://9cb3ed8455a1b79f49.gradio.live`
 URL Gradio prints in the cell output and paste it here after running:
 `<PASTE_GRADIO_LINK_HERE>`
 *(Gradio share links are temporary and expire after the Colab session ends —
