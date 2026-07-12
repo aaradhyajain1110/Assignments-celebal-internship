@@ -477,7 +477,6 @@ re-run the last cell to generate a new one.)*
 - [Overview](#overview)
 - [Why RAG](#why-rag)
 - [System Architecture](#system-architecture)
-- [Project Structure](#project-structure)
 - [Setup & Installation](#setup--installation)
 - [How to Run](#how-to-run)
 - [Using the Interactive UI](#using-the-interactive-ui)
