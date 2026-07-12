@@ -567,22 +567,6 @@ system work over private or specialized data the base model was never trained on
 
 ---
 
-## Project Structure
-
-```
-.
-├── week7_Aaradhya_Jain_.ipynb   # Main notebook — full pipeline, evaluation, and UI
-├── rag_metrics_report.md        # Auto-generated metrics report (produced by the notebook)
-└── README.md                    # This file
-```
-
-The notebook is organized into numbered, self-contained steps (STEP 1 through
-STEP 16, plus a UI step), each preceded by a markdown cell explaining what that
-step does and why. Running the notebook top to bottom reproduces the entire
-pipeline and regenerates the metrics report.
-
----
-
 ## Setup & Installation
 
 The notebook installs its own dependencies inline via `!pip install`, so no
