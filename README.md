@@ -730,3 +730,42 @@ details, is regenerated on each run and saved to `rag_metrics_report.md`.
 - Validating against real, human-labeled questions (rather than a handful of
   hand-picked examples) is what turns "this seems to work" into an actual,
   defensible measurement.
+
+
+  # Week 8 — Single-Agent Smart Assistant
+
+**Author:** Aaradhya Jain
+
+## Overview
+
+A single-agent smart assistant that understands a user's query, routes it to the right tool based on intent, and returns a structured JSON-style response.
+
+## Tools
+
+- **Calculator** — evaluates math expressions
+- **Keyword Extractor** — pulls out key words from text
+- **Word Counter** — counts words, characters, and sentences
+
+## How It Works
+
+The agent checks each query for trigger words (like "calculate," "keywords," or "count words") and routes it to the matching tool. Anything else gets a general response. Errors and missing input are handled gracefully instead of crashing. Every query and response is logged for review.
+
+## Bonus Features Added
+
+- **Improved routing** — recognizes more trigger words, not just exact matches (e.g. "calc," "solve," "compute" for math; "find keywords in" for keyword extraction)
+- **Query logging** — every query and its response is saved to a log so you can review the full history of interactions
+- **Third tool: Word Counter** — added on top of the original two tools, counting words, characters, and sentences
+- **Stronger error handling** — extra validation for edge cases like an empty calculation, a broken expression, or a trigger word with no content, so the agent always returns a clean error response instead of crashing
+
+## Interactive Mode
+
+The notebook includes a live input loop so you can type your own queries and see the agent respond in real time. Type `exit` to stop.
+
+## Files
+
+- `week8_Aaradhya_Jain_.ipynb` — the notebook
+- `README.md` — this file
+
+## How to Run
+
+Open the notebook in Jupyter or Colab, run all cells top to bottom, then use the Interactive Mode cell to test your own queries.
